@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import { Calendar, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 // Typing animation component (copied from recommended page)
 function TypingAnimation({ text, speed = 70 }: { text: string; speed?: number }) {
@@ -156,7 +156,7 @@ export default function CalendarPage() {
         {/* Header */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-purple-600" />
+            <div className="h-6 w-6 bg-purple-600 rounded"></div>
             <h1 className="text-2xl font-medium text-foreground">Calendar</h1>
           </div>
           <p><TypingAnimation text="Manage your upcoming meetings..." speed={70} /></p>

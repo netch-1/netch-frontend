@@ -1,140 +1,157 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Bell, Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
-import { databaseService, UserNotification } from '@/services/database-service';
+import { useState } from 'react';
+import { Bell, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 interface NotificationsSectionProps {
   className?: string;
 }
 
-export default function NotificationsSection({ className = "" }: NotificationsSectionProps) {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function NotificationsSection({ className = '' }: NotificationsSectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: 'success',
+      title: 'Profile Updated',
+      message: 'Your profile has been successfully updated.',
+      time: '2 minutes ago',
+      read: false
+    },
+    {
+      id: 2,
+      type: 'info',
+      title: 'New Feature Available',
+      message: 'Check out our new analytics dashboard.',
+      time: '1 hour ago',
+      read: false
+    },
+    {
+      id: 3,
+      type: 'warning',
+      title: 'Connection Warning',
+      message: 'Unusual activity detected on your network.',
+      time: '3 hours ago',
+      read: true
+    }
+  ]);
 
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (!user?.id) return;
+  const markAsRead = (id: number) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
+  };
 
-      try {
-        setLoading(true);
-        const response = await databaseService.getNotifications(user.id, 5);
-        
-        if (response.success && response.data) {
-          setNotifications(response.data);
-        } else {
-          setError(response.error || 'Failed to load notifications');
-        }
-      } catch (err) {
-        console.error('Error loading notifications:', err);
-        setError('Failed to load notifications');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const removeNotification = (id: number) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
 
-    loadNotifications();
-  }, [user?.id]);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
-  const getNotificationColor = (typeSlug: string) => {
-    switch (typeSlug) {
-      case 'connection_request':
-        return 'bg-blue-500';
-      case 'meeting_invitation':
-        return 'bg-purple-500';
-      case 'task_assignment':
-        return 'bg-orange-500';
-      case 'project_update':
-        return 'bg-green-500';
-      case 'profile_view':
-        return 'bg-gray-500';
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'info':
+        return <Info className="h-4 w-4 text-blue-500" />;
       default:
-        return 'bg-muted-foreground';
+        return <Info className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
-  };
-
-  if (loading) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-foreground" />
-          <h3 className="text-sm font-medium text-foreground">Notifications</h3>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-foreground" />
-          <h3 className="text-sm font-medium text-foreground">Notifications</h3>
-        </div>
-        <div className="text-center py-4">
-          <p className="text-sm text-muted-foreground">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (notifications.length === 0) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-foreground" />
-          <h3 className="text-sm font-medium text-foreground">Notifications</h3>
-        </div>
-        <div className="text-center py-4">
-          <p className="text-sm text-muted-foreground">No notifications</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`space-y-4 ${className}`}>
-      <div className="flex items-center gap-2">
-        <Bell className="h-4 w-4 text-foreground" />
-        <h3 className="text-sm font-medium text-foreground">Notifications</h3>
-      </div>
-      <div className="space-y-3">
-        {notifications.map((notification) => (
+    <div className={`relative ${className}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <>
           <div 
-            key={notification.id} 
-            style={{ border: '1px solid rgba(168, 85, 247, 0.3)' }}
-            className={`flex items-center gap-3 p-3 rounded-lg bg-card/50 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-purple-500 transition-all duration-200 ${!notification.is_read ? 'border-l-4 border-l-primary' : ''}`}
-          >
-            <div className={`w-2 h-2 rounded-full ${getNotificationColor(notification.type?.slug || 'default')} flex-shrink-0`}></div>
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-medium text-foreground">{notification.title}</span>
-              <p className="text-xs text-muted-foreground truncate">{notification.message}</p>
+            className="fixed inset-0 z-[9999]" 
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 mt-2 w-80 bg-card border border-border/50 rounded-xl shadow-xl z-[10000]">
+            <div className="p-4 border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 text-muted-foreground hover:text-foreground rounded-md"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <span className="text-xs text-muted-foreground flex-shrink-0">{formatTimeAgo(notification.created_at)}</span>
+            <div className="max-h-64 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No notifications</p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 border-b border-border/20 hover:bg-muted/20 transition-all duration-200 cursor-pointer group ${
+                      !notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      {getIcon(notification.type)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {notification.time}
+                        </p>
+                      </div>
+                      <div className="flex space-x-1">
+                        {!notification.read && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(notification.id);
+                            }}
+                            className="p-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeNotification(notification.id);
+                          }}
+                          className="p-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 } 

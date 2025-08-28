@@ -1,100 +1,52 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
+import { useState } from 'react';
 
 export default function DebugPage() {
-  const { user, loading, error } = useAuth();
-  const [envCheck, setEnvCheck] = useState<any>(null);
-  const [supabaseTest, setSupabaseTest] = useState<any>(null);
-
-  useEffect(() => {
-    // Check environment variables
-    setEnvCheck({
-      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
-      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
-    });
-
-    // Test Supabase connection
-    fetch('/api/test-supabase-config')
-      .then(res => res.json())
-      .then(data => setSupabaseTest(data))
-      .catch(err => setSupabaseTest({ error: err.message }));
-  }, []);
+  const [envCheck] = useState({
+    nodeEnv: process.env.NODE_ENV,
+    hasUrl: false,
+    hasKey: false,
+    url: 'Not configured',
+    key: 'Not configured'
+  });
 
   return (
-    <div className="min-h-screen p-8 bg-background">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold">Debug Information</h1>
-        
-        {/* Auth Context Status */}
-        <div className="p-4 border rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Auth Context Status</h2>
-          <div className="space-y-2 text-sm">
-            <p><strong>Loading:</strong> {loading ? 'true' : 'false'}</p>
-            <p><strong>User:</strong> {user ? user.email : 'null'}</p>
-            <p><strong>Error:</strong> {error || 'null'}</p>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/10 p-6">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold text-foreground">Debug Information</h1>
+          <p className="text-muted-foreground">
+            This page shows debug information about the application
+          </p>
+        </div>
+
+        {/* Environment Information */}
+        <div className="bg-card border border-border/50 rounded-lg p-6 space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Environment Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p><strong>NODE_ENV:</strong> {envCheck?.nodeEnv || 'Not set'}</p>
+            </div>
           </div>
         </div>
 
-        {/* Environment Variables */}
-        <div className="p-4 border rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Environment Variables</h2>
-          <div className="space-y-2 text-sm">
-            <p><strong>SUPABASE_URL:</strong> {envCheck?.url || 'Checking...'}</p>
-            <p><strong>SUPABASE_ANON_KEY:</strong> {envCheck?.key || 'Checking...'}</p>
-          </div>
-        </div>
-
-        {/* Supabase Connection Test */}
-        <div className="p-4 border rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Supabase Connection Test</h2>
-          <div className="space-y-2 text-sm">
-            {supabaseTest ? (
-              <>
-                <p><strong>Success:</strong> {supabaseTest.success ? 'true' : 'false'}</p>
-                <p><strong>Message:</strong> {supabaseTest.message || supabaseTest.error}</p>
-                <p><strong>Has Session:</strong> {supabaseTest.hasSession ? 'true' : 'false'}</p>
-                <p><strong>User Email:</strong> {supabaseTest.userEmail || 'null'}</p>
-              </>
-            ) : (
-              <p>Testing connection...</p>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="p-4 border rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
-          <div className="space-x-2">
-            <button 
-              onClick={() => window.location.reload()} 
-              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-            >
-              Refresh Page
-            </button>
-            <button 
-              onClick={() => window.location.href = '/auth/signin'} 
-              className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90"
-            >
-              Go to Sign In
-            </button>
-            <button 
-              onClick={() => window.location.href = '/dashboard'} 
-              className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90"
-            >
-              Go to Dashboard
-            </button>
+        {/* Application Status */}
+        <div className="bg-card border border-border/50 rounded-lg p-6 space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Application Status</h2>
+          <div className="space-y-2">
+            <p><strong>Status:</strong> <span className="text-green-500">Running</span></p>
+            <p><strong>Version:</strong> 1.0.0</p>
+            <p><strong>Framework:</strong> Next.js 15.4.2</p>
+            <p><strong>React:</strong> 19.1.0</p>
           </div>
         </div>
 
         {/* Raw Data */}
-        <div className="p-4 border rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">Raw Data</h2>
-          <pre className="text-xs bg-muted p-2 rounded overflow-auto">
-            {JSON.stringify({ envCheck, supabaseTest, auth: { loading, user: user?.email, error } }, null, 2)}
+        <div className="bg-card border border-border/50 rounded-lg p-6 space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Raw Debug Data</h2>
+          <pre className="bg-muted p-4 rounded-md overflow-x-auto text-sm">
+            {JSON.stringify({ envCheck }, null, 2)}
           </pre>
         </div>
       </div>

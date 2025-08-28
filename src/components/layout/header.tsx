@@ -2,19 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/auth-context';
-import { useTheme } from '@/components/theme-provider';
 import { 
   Menu, 
   X, 
   Bell, 
   User, 
   Settings, 
-  LogOut,
-  ChevronDown,
-  Globe,
-  Moon,
-  Sun
+  ChevronDown
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -22,28 +16,12 @@ interface HeaderProps {
 }
 
 export default function Header({ className = '' }: HeaderProps) {
-  const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const getDisplayName = () => {
-    if (user?.user_metadata?.first_name) {
-      return user.user_metadata.first_name;
-    }
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name.split(' ')[0];
-    }
-    if (user?.user_metadata?.name) {
-      return user.user_metadata.name.split(' ')[0];
-    }
     return 'User';
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    setIsUserMenuOpen(false);
   };
 
   return (
@@ -141,7 +119,7 @@ export default function Header({ className = '' }: HeaderProps) {
                   <div className="absolute right-0 mt-2 w-48 bg-card border border-border/50 rounded-lg shadow-lg z-[10000]">
                     <div className="p-3 border-b border-border/50">
                       <p className="text-sm font-medium text-foreground">{getDisplayName()}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">user@example.com</p>
                     </div>
                     <div className="p-1">
                       <Link
@@ -161,11 +139,10 @@ export default function Header({ className = '' }: HeaderProps) {
                         <span>Profile</span>
                       </Link>
                       <button
-                        onClick={handleSignOut}
-                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
                       >
-                        <LogOut className="h-4 w-4" />
-                        <span>Sign Out</span>
+                        <span>Close</span>
                       </button>
                     </div>
                   </div>

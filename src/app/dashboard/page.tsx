@@ -1,15 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import SearchBar from '@/components/layout/search-bar';
 import NotificationsSection from '@/components/layout/notifications-section';
 import RecommendedProfiles from '@/components/layout/recommended-profiles';
 import UpcomingMeetings from '@/components/layout/upcoming-meetings';
-import DatabaseStatus from '@/components/database-status';
-import { TrendingUp, Users, BarChart3, Settings, LogOut } from 'lucide-react';
 
 // Typing animation component
 function TypingAnimation({ text, speed = 100 }: { text: string; speed?: number }) {
@@ -38,53 +34,8 @@ function TypingAnimation({ text, speed = 100 }: { text: string; speed?: number }
 }
 
 export default function DashboardPage() {
-  const { user, signOut } = useAuth();
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const router = useRouter();
-
-  useEffect(() => {
-    // if (!loading && user && !onboardingCompleted) {
-    //   router.push('/onboarding');
-    // }
-  }, [router]);
-
-  // if (loading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/10">
-  //       <div className="text-center space-y-3">
-  //         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary mx-auto"></div>
-  //         <p className="text-sm text-muted-foreground">Loading...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/10">
-  //       <div className="text-center space-y-3">
-  //         <h1 className="text-xl font-medium text-foreground">Access Denied</h1>
-  //         <p className="text-sm text-muted-foreground">You need to be authenticated to access this page.</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   const getDisplayName = () => {
-    if (user?.user_metadata?.first_name) {
-      return user.user_metadata.first_name;
-    }
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name.split(' ')[0];
-    }
-    if (user?.user_metadata?.name) {
-      return user.user_metadata.name.split(' ')[0];
-    }
     return 'User';
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
   };
 
   const renderDashboard = () => (
@@ -119,10 +70,7 @@ export default function DashboardPage() {
         <SearchBar />
       </div>
 
-      {/* Database Status Check */}
-      <div className="pt-8 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-        <DatabaseStatus />
-      </div>
+
     </div>
   );
 
@@ -156,19 +104,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="flex items-center justify-between py-3 p-4 rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-200">
-          <div>
-            <p className="text-sm font-medium text-foreground">Sign Out</p>
-            <p className="text-xs text-muted-foreground">End session</p>
-          </div>
-          <button 
-            onClick={handleSignOut}
-            className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-2 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </button>
-        </div>
+
       </div>
     </div>
   );
