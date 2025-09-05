@@ -38,88 +38,6 @@ export default function DashboardPage() {
     return 'User';
   };
 
-  const renderDashboard = () => (
-    <div className="space-y-12">
-      {/* Welcome Section */}
-      <div className="space-y-1 animate-fade-in">
-        <h1 className="text-2xl font-medium text-foreground bg-gradient-to-r from-foreground via-purple-600 to-foreground bg-clip-text">
-          Welcome back, {getDisplayName()}
-        </h1>
-        <p>
-          <TypingAnimation text="Let's get started..." speed={30} />
-        </p>
-      </div>
-
-      {/* Recommended Profiles */}
-      <div className="animate-slide-up">
-        <RecommendedProfiles />
-      </div>
-
-      {/* Notifications and Meetings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <NotificationsSection />
-        </div>
-        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <UpcomingMeetings />
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="pt-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-        <SearchBar />
-      </div>
-
-
-    </div>
-  );
-
-  const renderSettings = () => (
-    <div className="space-y-8">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-medium text-foreground bg-gradient-to-r from-foreground via-purple-600 to-foreground bg-clip-text">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account
-        </p>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex items-center justify-between py-3 p-4 rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-200">
-          <div>
-            <p className="text-sm font-medium text-foreground">Account</p>
-            <p className="text-xs text-muted-foreground">Profile and security</p>
-          </div>
-          <button className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-colors">
-            Edit
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between py-3 p-4 rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-200">
-          <div>
-            <p className="text-sm font-medium text-foreground">Notifications</p>
-            <p className="text-xs text-muted-foreground">Alert preferences</p>
-          </div>
-          <button className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-colors">
-            Configure
-          </button>
-        </div>
-
-
-      </div>
-    </div>
-  );
-
-  const renderContent = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return renderDashboard();
-      case 'settings':
-        return renderSettings();
-      default:
-        return renderDashboard();
-    }
-  };
-
   return (
     <DashboardLayout>
       <style>{`
@@ -147,7 +65,37 @@ export default function DashboardPage() {
         }
       `}</style>
       <div className="light">
-        {renderContent()}
+        <div className="space-y-12">
+          {/* Welcome Section */}
+          <div className="space-y-1 animate-fade-in">
+            <h1 className="text-2xl font-medium text-foreground bg-gradient-to-r from-foreground via-purple-600 to-foreground bg-clip-text">
+              Welcome back, {getDisplayName()}
+            </h1>
+            <p>
+              <TypingAnimation text="Let's get started..." speed={30} />
+            </p>
+          </div>
+
+          {/* Recommended Profiles */}
+          <div className="animate-slide-up">
+            <RecommendedProfiles />
+          </div>
+
+          {/* Notifications and Meetings */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              <NotificationsSection />
+            </div>
+            <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <UpcomingMeetings />
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="pt-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <SearchBar />
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

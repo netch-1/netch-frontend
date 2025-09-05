@@ -1,8 +1,21 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Automatically redirect to dashboard after a short delay to show the page briefly
+    const timer = setTimeout(() => {
+      router.replace('/dashboard');
+    }, 2000); // 2 second delay
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent/5">
       <div className="text-center max-w-2xl mx-auto px-4">
@@ -33,6 +46,9 @@ export default function HomePage() {
               Contact
             </Link>
           </div>
+        </div>
+        <div className="mt-8 text-sm text-muted-foreground">
+          Redirecting to dashboard in 2 seconds...
         </div>
       </div>
     </div>
