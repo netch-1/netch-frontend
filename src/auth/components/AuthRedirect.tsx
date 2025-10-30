@@ -9,21 +9,14 @@ interface AuthRedirectProps {
 }
 
 export default function AuthRedirect({ children }: AuthRedirectProps) {
-  const { user, profile, loading, profileLoading } = useAuth()
+  const { user, loading, profileLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!loading && !profileLoading && user) {
-      // Check if user has completed their profile
-      if (!profile?.profile_completed) {
-        router.push('/onboarding')
-        return
-      }
-      
-      // If profile is complete, allow access to dashboard
       router.push('/dashboard')
     }
-  }, [user, profile, loading, profileLoading, router])
+  }, [user, loading, profileLoading, router])
 
   // Show loading while checking auth status
   if (loading || profileLoading) {

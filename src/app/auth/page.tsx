@@ -12,14 +12,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user && !loading && !profileLoading) {
-      // Check if user has completed their profile
-      if (!profile?.profile_completed) {
-        router.push('/onboarding')
-      } else {
-        router.push('/dashboard')
-      }
+      router.push('/dashboard')
     }
-  }, [user, profile, loading, profileLoading, router])
+  }, [user, loading, profileLoading, router])
 
   if (loading || profileLoading) {
     return (

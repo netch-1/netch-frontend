@@ -14,14 +14,10 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !profileLoading) {
-      if (!user) {
-        router.push('/auth')
-      } else if (user && !profile?.profile_completed) {
-        router.push('/onboarding')
-      }
+    if (!loading && !profileLoading && !user) {
+      router.push('/auth')
     }
-  }, [user, profile, loading, profileLoading, router])
+  }, [user, loading, profileLoading, router])
 
   if (loading || profileLoading) {
     return (
@@ -33,7 +29,7 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
     )
   }
 
-  if (!user || !profile?.profile_completed) {
+  if (!user) {
     return null
   }
 

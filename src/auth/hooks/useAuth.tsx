@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../utils/supabase'
-import { getUserProfile, UserProfile } from '../utils/profile'
+import { getUserProfile, UserProfile, createUserProfile } from '../utils/profile'
 
 interface AuthContextType {
   user: User | null
@@ -44,13 +44,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(true)
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, currentUser: User) => {
     setProfileLoading(true)
     try {
-      const userProfile = await getUserProfile(userId)
+      let userProfile = await getUserProfile(userId)
+      
+      // If no profile exists, create a basic one
+      if (!userProfile) {
+        console.log('No profile found, creating new profile for user:', userId)
+        userProfile = await createUserProfile(userId, {
+          email: currentUser?.email,
+          full_name: currentUser?.user_metadata?.full_name || ''
+        })
+      }
+      
       setProfile(userProfile)
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('Error fetching/creating profile:', error)
       setProfile(null)
     } finally {
       setProfileLoading(false)
@@ -59,7 +69,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const refreshProfile = async () => {
     if (user?.id) {
-      await fetchProfile(user.id)
+      await fetchProfile(user.id, user)
     }
   }
 
@@ -71,7 +81,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(session?.user ?? null)
       
       if (session?.user?.id) {
-        await fetchProfile(session.user.id)
+        await fetchProfile(session.user.id, session.user)
       } else {
         setProfileLoading(false)
       }
@@ -88,7 +98,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null)
         
         if (session?.user?.id) {
-          await fetchProfile(session.user.id)
+          await fetchProfile(session.user.id, session.user)
         } else {
           setProfile(null)
           setProfileLoading(false)

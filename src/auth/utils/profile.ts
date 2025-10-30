@@ -12,7 +12,6 @@ export interface UserProfile {
   email_signature?: string;
   companies_interested?: string;
   roles_interested?: string;
-  profile_completed: boolean;
   avatar_url?: string;
   bio?: string;
   created_at: string;
@@ -25,7 +24,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching user profile:', error);
@@ -81,12 +80,3 @@ export async function createUserProfile(userId: string, profileData: Partial<Use
   }
 }
 
-export async function checkProfileCompletion(userId: string): Promise<boolean> {
-  try {
-    const profile = await getUserProfile(userId);
-    return profile?.profile_completed || false;
-  } catch (error) {
-    console.error('Error checking profile completion:', error);
-    return false;
-  }
-}
