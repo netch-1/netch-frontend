@@ -9,17 +9,17 @@ interface AuthRedirectProps {
 }
 
 export default function AuthRedirect({ children }: AuthRedirectProps) {
-  const { user, loading, profileLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !profileLoading && user) {
+    if (!loading && user) {
       router.push('/dashboard')
     }
-  }, [user, loading, profileLoading, router])
+  }, [user, loading, router])
 
   // Show loading while checking auth status
-  if (loading || profileLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>

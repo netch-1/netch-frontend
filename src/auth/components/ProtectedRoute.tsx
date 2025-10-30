@@ -10,16 +10,16 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { user, profile, loading, profileLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !profileLoading && !user) {
+    if (!loading && !user) {
       router.push('/auth')
     }
-  }, [user, loading, profileLoading, router])
+  }, [user, loading, router])
 
-  if (loading || profileLoading) {
+  if (loading) {
     return (
       fallback || (
         <div className="min-h-screen flex items-center justify-center">

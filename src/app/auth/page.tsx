@@ -7,16 +7,16 @@ import AuthForm from '../../auth/components/AuthForm'
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-  const { user, profile, loading, profileLoading } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (user && !loading && !profileLoading) {
+    if (user && !loading) {
       router.push('/dashboard')
     }
-  }, [user, loading, profileLoading, router])
+  }, [user, loading, router])
 
-  if (loading || profileLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
