@@ -6,6 +6,8 @@ import SearchBar from '@/components/layout/search-bar';
 import NotificationsSection from '@/components/layout/notifications-section';
 import RecommendedProfiles from '@/components/layout/recommended-profiles';
 import UpcomingMeetings from '@/components/layout/upcoming-meetings';
+import ProtectedRoute from '@/auth/components/ProtectedRoute';
+import { useAuth } from '@/auth/hooks/useAuth';
 
 // Typing animation component
 function TypingAnimation({ text, speed = 100 }: { text: string; speed?: number }) {
@@ -34,12 +36,18 @@ function TypingAnimation({ text, speed = 100 }: { text: string; speed?: number }
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  
   const getDisplayName = () => {
-    return 'User';
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.split(' ')[0]; // First name only
+    }
+    return user?.email?.split('@')[0] || 'User';
   };
 
   return (
-    <DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
       <style>{`
         @keyframes fade-in {
           from { opacity: 0; }
@@ -98,5 +106,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 } 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import ProtectedRoute from '@/auth/components/ProtectedRoute';
 import TypingAnimation from '@/components/typing-animation';
 import { 
   User, 
@@ -29,7 +30,8 @@ export default function SettingsPage() {
   ];
 
   return (
-    <DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
       <div className="max-w-5xl mx-auto py-6 space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
@@ -302,5 +304,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 } 

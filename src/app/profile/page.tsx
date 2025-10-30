@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import ProtectedRoute from '@/auth/components/ProtectedRoute';
 import { Upload, User, Building, GraduationCap, Mail, FileText, Briefcase } from 'lucide-react';
 
 // Typing animation component (copied from other pages)
@@ -320,7 +321,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
       <div className="max-w-4xl mx-auto py-8 space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Profile</h1>
@@ -390,5 +392,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 } 

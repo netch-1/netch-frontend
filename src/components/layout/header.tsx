@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/auth/hooks/useAuth';
 import { 
   Menu, 
   X, 
   Bell, 
   User, 
   Settings, 
-  ChevronDown
+  ChevronDown,
+  LogOut
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -19,9 +22,28 @@ export default function Header({ className = '' }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const router = useRouter();
 
   const getDisplayName = () => {
-    return 'User';
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.split(' ')[0]; // First name only
+    }
+    return user?.email?.split('@')[0] || 'User';
+  };
+
+  const getUserEmail = () => {
+    return user?.email || 'user@example.com';
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setIsUserMenuOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -119,7 +141,7 @@ export default function Header({ className = '' }: HeaderProps) {
                   <div className="absolute right-0 mt-2 w-48 bg-card border border-border/50 rounded-lg shadow-lg z-[10000]">
                     <div className="p-3 border-b border-border/50">
                       <p className="text-sm font-medium text-foreground">{getDisplayName()}</p>
-                      <p className="text-xs text-muted-foreground truncate">user@example.com</p>
+                      <p className="text-xs text-muted-foreground truncate">{getUserEmail()}</p>
                     </div>
                     <div className="p-1">
                       <Link
@@ -138,11 +160,13 @@ export default function Header({ className = '' }: HeaderProps) {
                         <User className="h-4 w-4" />
                         <span>Profile</span>
                       </Link>
+                      <div className="border-t border-border/50 my-1"></div>
                       <button
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
+                        onClick={handleLogout}
+                        className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
                       >
-                        <span>Close</span>
+                        <LogOut className="h-4 w-4" />
+                        <span>Sign Out</span>
                       </button>
                     </div>
                   </div>
