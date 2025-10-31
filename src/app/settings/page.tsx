@@ -20,13 +20,58 @@ import {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({ ...prev, [name]: value }));
+    setPasswordError('');
+    setPasswordSuccess('');
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('All fields are required');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    try {
+      // Here you would typically call your password change API
+      // For now, we'll simulate success
+      setPasswordSuccess('Password changed successfully!');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setIsChangingPassword(false);
+    } catch (error) {
+      setPasswordError('Failed to change password. Please try again.');
+    }
+  };
 
   const tabs = [
     { id: 'account', name: 'Account', icon: User },
     { id: 'billing', name: 'Billing', icon: CreditCard },
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'privacy', name: 'Privacy & Security', icon: Shield },
-    { id: 'appearance', name: 'Appearance', icon: Palette },
   ];
 
   return (
@@ -146,47 +191,150 @@ export default function SettingsPage() {
               )}
 
               {activeTab === 'billing' && (
-                <div className="space-y-5">
-                  <h2 className="text-xl font-semibold text-foreground">Billing & Subscription</h2>
-                  
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">Pro Plan</h3>
-                        <p className="text-muted-foreground">$29/month</p>
+                <div className="space-y-6">
+                  <div className="text-center space-y-3">
+                    <h2 className="text-3xl font-bold text-foreground">Choose Your Plan</h2>
+                    <p className="text-muted-foreground text-lg">Select the perfect plan for your networking needs</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {/* Free Tier */}
+                    <div className="bg-card/50 border border-border rounded-xl p-6 space-y-4 hover:shadow-lg transition-all duration-200">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-xl font-semibold text-foreground">Free</h3>
+                        <div className="space-y-1">
+                          <p className="text-3xl font-bold text-foreground">$0</p>
+                          <p className="text-sm text-muted-foreground">per month</p>
+                        </div>
                       </div>
-                      <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full text-sm font-medium">
-                        Active
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Next billing date: March 15, 2024
-                    </p>
-                    <div className="flex space-x-3">
-                      <button className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
-                        Manage
+                      
+                      <div className="space-y-3">
+                        <div className="text-center py-2">
+                          <p className="text-lg font-medium text-foreground">10 connections</p>
+                          <p className="text-sm text-muted-foreground">per week</p>
+                        </div>
+                        
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Basic networking features</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Profile creation</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Limited messaging</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <button className="w-full py-2.5 px-4 border border-border text-foreground rounded-lg hover:bg-muted/50 transition-all duration-200 font-medium">
+                        Current Plan
                       </button>
-                      <button className="px-3 py-1.5 text-sm border border-border text-foreground rounded-md hover:bg-muted/50 transition-colors">
-                        Download
+                    </div>
+
+                    {/* Pro Tier */}
+                    <div className="bg-card/50 border border-border rounded-xl p-6 space-y-4 hover:shadow-lg transition-all duration-200">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-xl font-semibold text-foreground">Pro</h3>
+                        <div className="space-y-1">
+                          <p className="text-3xl font-bold text-foreground">$9.99</p>
+                          <p className="text-sm text-muted-foreground">per month</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="text-center py-2">
+                          <p className="text-lg font-medium text-foreground">25 connections</p>
+                          <p className="text-sm text-muted-foreground">per week</p>
+                        </div>
+                        
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">All free features</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Advanced search filters</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Priority support</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Enhanced profile visibility</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <button className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-md">
+                        Upgrade to Pro
+                      </button>
+                    </div>
+
+                    {/* Premium Tier - Highlighted */}
+                    <div className="bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-200/20 dark:to-blue-200/20 border-2 border-purple-300 dark:border-purple-400 rounded-xl p-6 space-y-4 hover:shadow-xl transition-all duration-200 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 text-xs font-medium rounded-bl-lg">
+                        MOST POPULAR
+                      </div>
+                      
+                      <div className="text-center space-y-2">
+                        <h3 className="text-xl font-semibold text-foreground">Premium</h3>
+                        <div className="space-y-1">
+                          <p className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">$19.99</p>
+                          <p className="text-sm text-muted-foreground">per month</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="text-center py-2">
+                          <p className="text-lg font-medium text-transparent bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text">Unlimited connections</p>
+                          <p className="text-sm text-muted-foreground">per week</p>
+                        </div>
+                        
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                            <span className="text-muted-foreground">All Pro features</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                            <span className="text-muted-foreground">AI-powered matching</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Exclusive networking events</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Personal relationship manager</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
+                            <span className="text-muted-foreground">Advanced analytics</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <button className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg">
+                        Get Premium
                       </button>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <h3 className="text-base font-semibold text-foreground">Payment Methods</h3>
-                    <div className="border border-border rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <CreditCard className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-foreground">•••• •••• •••• 4242</p>
-                            <p className="text-sm text-muted-foreground">Expires 12/25</p>
-                          </div>
-                        </div>
-                        <button className="text-purple-600 hover:text-purple-700 transition-colors">
-                          Edit
-                        </button>
+                  <div className="bg-muted/20 rounded-lg p-4 border border-border/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-foreground">Need help choosing?</h3>
+                        <p className="text-sm text-muted-foreground">Contact our team for personalized recommendations</p>
                       </div>
+                      <button className="px-4 py-2 text-sm border border-border text-foreground rounded-md hover:bg-muted/50 transition-colors">
+                        Contact Sales
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -237,26 +385,92 @@ export default function SettingsPage() {
                 <div className="space-y-5">
                   <h2 className="text-xl font-semibold text-foreground">Privacy & Security</h2>
                   
-                  <div className="space-y-3">
-                    <div className="p-3 border border-border rounded-lg">
-                      <h3 className="font-medium text-foreground text-sm mb-1">Change Password</h3>
-                      <p className="text-xs text-muted-foreground mb-2">Update your password to keep your account secure</p>
-                      <button className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
-                        Change Password
-                      </button>
+                  <div className="space-y-4">
+                    <div className="p-4 border border-border rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-medium text-foreground text-sm mb-1">Change Password</h3>
+                          <p className="text-xs text-muted-foreground">Update your password to keep your account secure</p>
+                        </div>
+                        <button 
+                          onClick={() => setIsChangingPassword(!isChangingPassword)}
+                          className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                        >
+                          {isChangingPassword ? 'Cancel' : 'Change Password'}
+                        </button>
+                      </div>
+
+                      {isChangingPassword && (
+                        <form onSubmit={handlePasswordSubmit} className="space-y-3 mt-4 pt-4 border-t border-border/50">
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Current Password</label>
+                            <input
+                              type="password"
+                              name="currentPassword"
+                              value={passwordForm.currentPassword}
+                              onChange={handlePasswordChange}
+                              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-sm"
+                              placeholder="Enter current password"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">New Password</label>
+                            <input
+                              type="password"
+                              name="newPassword"
+                              value={passwordForm.newPassword}
+                              onChange={handlePasswordChange}
+                              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-sm"
+                              placeholder="Enter new password"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Confirm New Password</label>
+                            <input
+                              type="password"
+                              name="confirmPassword"
+                              value={passwordForm.confirmPassword}
+                              onChange={handlePasswordChange}
+                              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-sm"
+                              placeholder="Confirm new password"
+                            />
+                          </div>
+
+                          {passwordError && (
+                            <div className="text-red-600 text-xs mt-2">{passwordError}</div>
+                          )}
+
+                          {passwordSuccess && (
+                            <div className="text-green-600 text-xs mt-2">{passwordSuccess}</div>
+                          )}
+
+                          <div className="flex space-x-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsChangingPassword(false);
+                                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                setPasswordError('');
+                                setPasswordSuccess('');
+                              }}
+                              className="px-3 py-1.5 text-xs text-foreground hover:text-purple-600 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="px-3 py-1.5 text-xs bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                            >
+                              Update Password
+                            </button>
+                          </div>
+                        </form>
+                      )}
                     </div>
 
-                    <div className="p-3 border border-border rounded-lg">
-                      <h3 className="font-medium text-foreground text-sm mb-1">Two-Factor Authentication</h3>
-                      <p className="text-xs text-muted-foreground mb-2">Add an extra layer of security to your account</p>
-                      <button className="px-3 py-1.5 text-sm border border-border text-foreground rounded-md hover:bg-muted/50 transition-colors">
-                        Enable 2FA
-                      </button>
-                    </div>
-
-                    <div className="p-3 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/10">
+                    <div className="p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/10">
                       <h3 className="font-medium text-foreground text-sm mb-1">Delete Account</h3>
-                      <p className="text-xs text-muted-foreground mb-2">Permanently delete your account and all associated data</p>
+                      <p className="text-xs text-muted-foreground mb-3">Permanently delete your account and all associated data</p>
                       <button className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
                         Delete Account
                       </button>
@@ -265,40 +479,6 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {activeTab === 'appearance' && (
-                <div className="space-y-5">
-                  <h2 className="text-xl font-semibold text-foreground">Appearance</h2>
-                  
-                  <div className="space-y-3">
-                    <div className="p-3 border border-border rounded-lg">
-                      <h3 className="font-medium text-foreground text-sm mb-1">Theme</h3>
-                      <p className="text-xs text-muted-foreground mb-2">Choose your preferred theme</p>
-                      <div className="flex space-x-3">
-                        <button className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md">
-                          Light
-                        </button>
-                        <button className="px-3 py-1.5 text-sm border border-border text-foreground rounded-md hover:bg-muted/50 transition-colors">
-                          Dark
-                        </button>
-                        <button className="px-3 py-1.5 text-sm border border-border text-foreground rounded-md hover:bg-muted/50 transition-colors">
-                          Auto
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-3 border border-border rounded-lg">
-                      <h3 className="font-medium text-foreground text-sm mb-1">Language</h3>
-                      <p className="text-xs text-muted-foreground mb-2">Select your preferred language</p>
-                      <select className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent text-sm">
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
