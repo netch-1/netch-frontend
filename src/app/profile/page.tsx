@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import ProtectedRoute from '@/auth/components/ProtectedRoute';
 import { Upload, User, Building, GraduationCap, Mail, FileText, Briefcase } from 'lucide-react';
+import { supabase } from '@/auth/utils/supabase';
 
 // Typing animation component (copied from other pages)
 function TypingAnimation({ text, speed = 100 }: { text: string; speed?: number }) {
@@ -33,6 +34,10 @@ function TypingAnimation({ text, speed = 100 }: { text: string; speed?: number }
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
     // Basic Info
     firstName: '',
@@ -58,6 +63,147 @@ export default function ProfilePage() {
     // Resume
     resume: null as File | null,
   });
+
+  // Load profile data on component mount
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        setError('Please log in to view your profile');
+        setLoading(false);
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+      } else if (profile) {
+        // Split full_name into firstName and lastName
+        const nameParts = (profile.full_name || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        setFormData({
+          firstName,
+          lastName,
+          email: profile.email || user.email || '',
+          phone: profile.phone || '',
+          location: profile.location || '',
+          college: profile.college || '',
+          graduationYear: profile.graduation_year?.toString() || '',
+          organizations: profile.organizations || '',
+          emailSignature: profile.email_signature || '',
+          companiesInterested: profile.companies_interested || '',
+          rolesInterested: profile.roles_interested || '',
+          resume: null, // File uploads handled separately
+        });
+      } else {
+        // New profile, set defaults
+        setFormData(prev => ({
+          ...prev,
+          email: user.email || ''
+        }));
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        setError('Please log in to save your profile');
+        return;
+      }
+
+      // Validate required fields
+      const requiredFields = {
+        firstName: 'First Name',
+        lastName: 'Last Name', 
+        email: 'Email',
+        location: 'Location',
+        college: 'College/University',
+        graduationYear: 'Graduation Year',
+        organizations: 'Organizations',
+        emailSignature: 'Email Signature',
+        companiesInterested: 'Companies Interested',
+        rolesInterested: 'Roles Interested'
+      };
+
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!formData[field as keyof typeof formData]?.toString().trim()) {
+          setError(`${label} is required`);
+          return;
+        }
+      }
+
+      if (!formData.resume) {
+        setError('Resume is required');
+        return;
+      }
+
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+      
+      const profileUpdate = {
+        id: user.id,
+        full_name: fullName,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        location: formData.location.trim(),
+        college: formData.college.trim(),
+        graduation_year: parseInt(formData.graduationYear) || null,
+        organizations: formData.organizations.trim(),
+        email_signature: formData.emailSignature.trim(),
+        companies_interested: formData.companiesInterested.trim(),
+        roles_interested: formData.rolesInterested.trim(),
+        profile_completed: true,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profileUpdate, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        })
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        setError(`Failed to save profile: ${error.message}`);
+      } else {
+        setSuccess('Profile saved successfully!');
+        // Optionally redirect to dashboard or another page
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const sections = [
     {
@@ -104,6 +250,9 @@ export default function ProfilePage() {
   const nextSection = () => {
     if (activeSection < sections.length - 1) {
       setActiveSection(activeSection + 1);
+    } else {
+      // On the last section, save the profile
+      saveProfile();
     }
   };
 
@@ -370,25 +519,51 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {renderSection()}
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="text-muted-foreground">Loading profile...</div>
+            </div>
+          ) : (
+            <>
+              {renderSection()}
+              
+              {/* Error and Success Messages */}
+              {(error || success) && (
+                <div className="mt-6">
+                  {error && (
+                    <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800">
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-md border border-green-200 dark:border-green-800">
+                      {success}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-border/50">
-            <button
-              onClick={prevSection}
-              disabled={activeSection === 0}
-              className="px-6 py-2 text-foreground hover:text-purple-600 disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            <button
-              onClick={nextSection}
-              disabled={activeSection === sections.length - 1}
-              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {activeSection === sections.length - 1 ? 'Save Profile' : 'Next'}
-            </button>
-          </div>
+          {!loading && (
+            <div className="flex justify-between mt-8 pt-6 border-t border-border/50">
+              <button
+                onClick={prevSection}
+                disabled={activeSection === 0 || saving}
+                className="px-6 py-2 text-foreground hover:text-purple-600 disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={nextSection}
+                disabled={saving}
+                className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? 'Saving...' : (activeSection === sections.length - 1 ? 'Save Profile' : 'Next')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

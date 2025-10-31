@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import ProtectedRoute from '@/auth/components/ProtectedRoute';
 import TypingAnimation from '@/components/typing-animation';
+import { supabase } from '@/auth/utils/supabase';
 import { 
   User, 
   CreditCard, 
@@ -21,6 +22,14 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profileData, setProfileData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    location: ''
+  });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -28,6 +37,140 @@ export default function SettingsPage() {
   });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  // Load user profile data
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      console.log('Loading profile...');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error while loading:', authError);
+        setProfileError('Authentication error while loading profile');
+        return;
+      }
+
+      if (user) {
+        console.log('User found, loading profile for:', user.id);
+        
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error loading profile:', error);
+          if (error.code === 'PGRST116') {
+            // No profile found, create default with user email
+            console.log('No profile found, using default values');
+            setProfileData({
+              full_name: '',
+              email: user.email || '',
+              phone: '',
+              location: ''
+            });
+          } else {
+            setProfileError('Failed to load profile data: ' + error.message);
+          }
+        } else if (profile) {
+          console.log('Profile loaded:', profile);
+          setProfileData({
+            full_name: profile.full_name || '',
+            email: profile.email || user.email || '',
+            phone: profile.phone || '',
+            location: profile.location || ''
+          });
+        }
+      } else {
+        console.error('No user found');
+        setProfileError('Please log in to view your profile');
+      }
+    } catch (error) {
+      console.error('Unexpected error loading profile:', error);
+      setProfileError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({ ...prev, [name]: value }));
+    setProfileError('');
+    setProfileSuccess('');
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setProfileError('');
+    setProfileSuccess('');
+
+    try {
+      console.log('Starting save profile...');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        setProfileError('Authentication error: ' + authError.message);
+        return;
+      }
+
+      if (!user) {
+        console.error('No user found');
+        setProfileError('User not authenticated. Please log in again.');
+        return;
+      }
+
+      console.log('User authenticated:', user.id);
+      console.log('Profile data to save:', profileData);
+
+      // Validate required fields
+      if (!profileData.full_name.trim()) {
+        setProfileError('Full name is required');
+        return;
+      }
+
+      const profileUpdate = {
+        id: user.id,
+        full_name: profileData.full_name.trim(),
+        email: profileData.email.trim(),
+        phone: profileData.phone.trim(),
+        location: profileData.location.trim(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Saving profile update:', profileUpdate);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profileUpdate, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        })
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        setProfileError(`Failed to save profile: ${error.message}`);
+      } else {
+        console.log('Profile saved successfully:', data);
+        setProfileSuccess('Profile saved successfully!');
+        setIsEditingProfile(false);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setProfileError('An unexpected error occurred. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -119,7 +262,14 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-foreground">Account Settings</h2>
                     <button
-                      onClick={() => setIsEditingProfile(!isEditingProfile)}
+                      onClick={() => {
+                        setIsEditingProfile(!isEditingProfile);
+                        if (isEditingProfile) {
+                          setProfileError('');
+                          setProfileSuccess('');
+                          loadProfile(); // Reset form if canceling
+                        }
+                      }}
                       className="flex items-center space-x-2 px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm"
                     >
                       {isEditingProfile ? <X className="h-3 w-3" /> : <Edit className="h-3 w-3" />}
@@ -127,63 +277,104 @@ export default function SettingsPage() {
                     </button>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-border/50 rounded-lg bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 disabled:opacity-50 text-sm transition-all duration-200"
-                        placeholder="Enter your first name"
-                      />
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="text-muted-foreground">Loading profile...</div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
-                        placeholder="Enter your last name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Phone
-                      </label>
-                      <input
-                        type="tel"
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Full Name
+                          </label>
+                          <input
+                            type="text"
+                            name="full_name"
+                            value={profileData.full_name}
+                            onChange={handleProfileChange}
+                            disabled={!isEditingProfile}
+                            className="w-full px-3 py-2 border border-border/50 rounded-lg bg-background/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 disabled:opacity-50 text-sm transition-all duration-200"
+                            placeholder="Enter your full name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Location
+                          </label>
+                          <input
+                            type="text"
+                            name="location"
+                            value={profileData.location}
+                            onChange={handleProfileChange}
+                            disabled={!isEditingProfile}
+                            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                            placeholder="Enter your location"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={profileData.email}
+                            onChange={handleProfileChange}
+                            disabled={!isEditingProfile}
+                            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                            placeholder="Enter your email"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Phone
+                          </label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={profileData.phone}
+                            onChange={handleProfileChange}
+                            disabled={!isEditingProfile}
+                            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                            placeholder="Enter your phone number"
+                          />
+                        </div>
+                      </div>
 
-                  {isEditingProfile && (
+                      {(profileError || profileSuccess) && (
+                        <div className="mt-4">
+                          {profileError && (
+                            <div className="text-red-600 text-sm">{profileError}</div>
+                          )}
+                          {profileSuccess && (
+                            <div className="text-green-600 text-sm">{profileSuccess}</div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {isEditingProfile && !loading && (
                     <div className="flex justify-end space-x-3 pt-3 border-t border-border/30">
                       <button
-                        onClick={() => setIsEditingProfile(false)}
-                        className="px-3 py-1.5 text-sm text-foreground hover:text-purple-600 transition-colors"
+                        onClick={() => {
+                          setIsEditingProfile(false);
+                          setProfileError('');
+                          setProfileSuccess('');
+                          loadProfile(); // Reset form
+                        }}
+                        disabled={saving}
+                        className="px-3 py-1.5 text-sm text-foreground hover:text-purple-600 transition-colors disabled:opacity-50"
                       >
                         Cancel
                       </button>
-                      <button className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm">
-                        Save
+                      <button 
+                        onClick={saveProfile}
+                        disabled={saving}
+                        className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm disabled:opacity-50"
+                      >
+                        {saving ? 'Saving...' : 'Save'}
                       </button>
                     </div>
                   )}
@@ -271,7 +462,10 @@ export default function SettingsPage() {
                         </ul>
                       </div>
                       
-                      <button className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-md">
+                      <button 
+                        onClick={() => window.open('https://buy.stripe.com/3cI28r8jq7Pvc5faxY1Nu04', '_blank')}
+                        className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-md"
+                      >
                         Upgrade to Pro
                       </button>
                     </div>
@@ -320,7 +514,10 @@ export default function SettingsPage() {
                         </ul>
                       </div>
                       
-                      <button className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg">
+                      <button 
+                        onClick={() => window.open('https://buy.stripe.com/eVq5kDczG5Hn3yJ8pQ1Nu05', '_blank')}
+                        className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg"
+                      >
                         Get Premium
                       </button>
                     </div>
